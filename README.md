@@ -8,6 +8,10 @@ Built with a React/Vite frontend and a Node.js/Express backend, using Anthropic 
 
 MIT license, by [@sjdev](https://sjdev.co). 
 
+## Query pipeline
+
+Source Ingestion -> Parsing -> Chunking -> Embedding (using Voayge AI voyage-3 model) -> Storage (vector store) -> { user query submission } -> evaluation of user query -> Retrieval -> Ranking -> Response Generation (Using Anthopic's claude-opus-4-6 model) -> Response Groundedness Scoring (using Voyage AI rerank-r model)
+
 ## Prerequisites
 
 - **Node.js** (v18+)
@@ -58,9 +62,6 @@ Two-package monorepo:
 
 - `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for notebooks/data sources, main area for LLM chat with explorable citations, groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
 
-## Query pipeline
-
-Source Ingestion -> Parsing -> Chunking -> Embedding -> Storage (vector store) -> { user query submission } -> evaluation of user query  → Retrieval -> Ranking -> Response Generation -> Response Groundedness Scoring
 
 ## License
 
