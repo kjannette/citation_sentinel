@@ -6,8 +6,6 @@ Users upload source documents, or provide links to online sources including audi
 
 Built with a React/Vite frontend and a Node.js/Express backend, using Anthropic Claude for generation, OpenAI Whisper for video audio track transcription, Voyage AI for embeddings and response cosine similarity scoring (the "groundedness" score).
 
-MIT license, by [@sjdev](https://sjdev.co). 
-
 ## Query pipeline
 
 Source Ingestion -> Parsing -> Chunking -> Embedding (using Voayge AI voyage-3 model) -> Storage (vector store) -> { user query submission } -> evaluation of user query -> Retrieval -> Ranking -> Response Generation (Using Anthopic's claude-opus-4-6 model) -> Response Groundedness Scoring (using Voyage AI rerank-r model)
@@ -61,7 +59,6 @@ Two-package monorepo:
 - `server/` -- single Express backend with layered architecture (routes -> services -> stores). Routes orchestrate; services contain business logic; stores manage in-memory state.
 
 - `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for notebooks/data sources, main area for LLM chat with explorable citations, groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
-
 
 ## License
 
