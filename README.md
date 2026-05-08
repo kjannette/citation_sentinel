@@ -34,6 +34,22 @@ make dev
 
 This app demonstrates the core source-grounded Q&A pattern with transparent retrieval, generation, and groundedness scoring (LLM response quality cosine scoring) -- all with swappable models and is fully open source.
 
+## Methedology
+
+This application is a RAG (Retrieval-Augmented Generation) system that allows users to upload source documents — PDFs, DOCX files, plain text, audio files, web URLs, and YouTube videos — which are then parsed, split into ~2000-character overlapping chunks, and converted into vector embeddings using Voyage AI's voyage-3 model. Those embeddings are stored in an in-memory vector store.
+
+When a user submits a query, the system enforces groundedness through a multi-layered strategy:
+
+1. Retrieval constraint — The query is embedded (also via voyage-3) and compared against stored chunk vectors using cosine similarity, returning the top 20 candidates. Only user-supplied source material is searched; the system has no web search capability.
+   
+3. Reranking for precision — Those 20 candidates are sent to Voyage AI's rerank-2 cross-encoder, which re-scores each query-chunk pair with deeper semantic analysis. Only the top 5 survive.
+   
+5. Prompt-level constraint — The top 5 chunks are passed to the Primary LLM (Claude claude-opus-4-6) with an explicit system instruction: "Answer the user's question using ONLY the source documents provided below." The LLM must cite sources using bracketed indices (e.g., [1], [2]) and admit when sources are insufficient.
+   
+7. Schema enforcement — The LLM's response is constrained to a JSON schema requiring structured fields (answer, citedSourceIndices, followUpQuestions), and any cited source indices that don't correspond to real source groups are programmatically stripped out.
+   
+9. Post-generation groundedness scoring — After the answer is generated, it is split into individual sentences, each sentence is embedded via voyage-3, and each sentence embedding is compared (cosine similarity) against the vectors of the cited chunks. The raw similarities are calibrated to a 0–1 scale and averaged, producing a single groundedness score that is surfaced to the user as a visual indicator (green/gold/red).
+
 ## Design
 
 Two-package monorepo:
