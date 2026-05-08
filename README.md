@@ -34,7 +34,7 @@ make dev
 
 This app demonstrates the core source-grounded Q&A pattern with transparent retrieval, generation, and groundedness scoring (LLM response quality cosine scoring) -- all with swappable models and is fully open source.
 
-## Methedology
+## Methodology
 
 This application is a RAG (Retrieval-Augmented Generation) system that allows users to upload source documents — PDFs, DOCX files, plain text, audio files, web URLs, and YouTube videos — which are then parsed, split into ~2000-character overlapping chunks, and converted into vector embeddings using Voyage AI's voyage-3 model. Those embeddings are stored in an in-memory vector store.
 
