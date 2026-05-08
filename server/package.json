@@ -1,0 +1,33 @@
+{
+  "name": "notebook-clone-server",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "mammoth": "^1.11.0",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^6.27.0",
+    "pdf-parse": "^1.1.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "vitest": "^3.0.0"
+  }
+}

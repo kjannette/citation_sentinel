@@ -1,0 +1,32 @@
+{
+  "name": "notebook-clone-web",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check ."
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-react": "^7.37.5",
+    "jsdom": "^28.1.0",
+    "prettier": "^3.5.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.0"
+  }
+}
