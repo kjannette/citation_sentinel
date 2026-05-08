@@ -31,27 +31,19 @@ make dev
 
 ## Rationale
 
-NotebookLM is a powerful research tool, but it is proprietary and closed.
-This clone demonstrates the core source-grounded Q&A pattern with transparent
-retrieval, generation, and groundedness scoring (LLM response quality cosine scoring) -- all with swappable models/fully open source.
+This app demonstrates the core source-grounded Q&A pattern with transparent retrieval, generation, and groundedness scoring (LLM response quality cosine scoring) -- all with swappable models and is fully open source.
 
 ## Design
 
 Two-package monorepo:
 
-- `server/` -- single Express backend with layered architecture
-  (routes -> services -> stores). Routes orchestrate; services contain
-  business logic; stores manage in-memory state.
+- `server/` -- single Express backend with layered architecture (routes -> services -> stores). Routes orchestrate; services contain business logic; stores manage in-memory state.
 
-- `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for
-  notebooks/data sources, main area for LLM chat with explorable citations, 
-  groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
+- `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for notebooks/data sources, main area for LLM chat with explorable citations, groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
 
 ## Query pipeline
 
-Embed query (Voyage) -> k-NN search -> rerank (Voyage) ->
-generate answer with citations (Claude) -> compute groundedness score
-(cosine similarity of answer vs cited chunks).
+Source Ingestion -> Parsing -> Chunking -> Embedding -> Storage (vector store) -> { user query submission } -> evaluation of user query  → Retrieval -> Ranking -> Response Generation -> Response Groundedness Scoring
 
 ## License
 
