@@ -5,7 +5,9 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../logger.js';
 import * as notebookStore from '../stores/notebookStore.js';
+import type { Source } from '../stores/notebookStore.js';
 import { parseFile, chunkText, parseUrl, parseYoutubeUrl, isYoutubeUrl } from '../services/sourceService.js';
+import type { TextChunk } from '../services/sourceService.js';
 import { embedTexts, storeChunkEmbeddings } from '../services/retrievalService.js';
 import { triggerPreGeneration } from '../services/preGenerationService.js';
 import {
@@ -50,11 +52,11 @@ router.post(
   requireFile,
   async (req: NotebookRequest, res: Response, next: NextFunction) => {
     try {
-      const sourceId = uuidv4();
-      const rawName = Buffer.from(req.file!.originalname, 'latin1').toString('utf-8');
-      const displayName = cleanFilename(rawName);
-      const text = await parseFile(req.file!.buffer, req.file!.mimetype, displayName);
-      const chunks = chunkText(text, sourceId);
+      const sourceId: string = uuidv4();
+      const rawName: string = Buffer.from(req.file!.originalname, 'latin1').toString('utf-8');
+      const displayName: string = cleanFilename(rawName);
+      const text: string = await parseFile(req.file!.buffer, req.file!.mimetype, displayName);
+      const chunks: TextChunk[] = chunkText(text, sourceId);
 
       logger.info(
         {
@@ -67,11 +69,11 @@ router.post(
 
       notebookStore.addChunksToNotebook(req.notebookId!, chunks);
 
-      const texts = chunks.map((c) => c.text);
-      const embeddings = await embedTexts(texts, 'document');
+      const texts: string[] = chunks.map((c) => c.text);
+      const embeddings: number[][] = await embedTexts(texts, 'document');
       storeChunkEmbeddings(chunks, embeddings);
 
-      const source = notebookStore.addSource(req.notebookId!, {
+      const source: Source | null = notebookStore.addSource(req.notebookId!, {
         id: sourceId,
         name: displayName,
         mimetype: req.file!.mimetype,
@@ -100,14 +102,14 @@ router.post(
   async (req: NotebookRequest & Request<unknown, unknown, UrlBody>, res: Response, next: NextFunction) => {
     try {
       const { url } = req.body;
-      const sourceId = uuidv4();
-      const isYT = isYoutubeUrl(url!);
-      const displayName = isYT ? `YouTube: ${url}` : url!.replace(/^https?:\/\//, '').slice(0, 60);
+      const sourceId: string = uuidv4();
+      const isYT: boolean = isYoutubeUrl(url!);
+      const displayName: string = isYT ? `YouTube: ${url}` : url!.replace(/^https?:\/\//, '').slice(0, 60);
 
       logger.info({ sourceId, url, isYT }, 'processing URL source');
 
-      const text = isYT ? await parseYoutubeUrl(url!) : await parseUrl(url!);
-      const chunks = chunkText(text, sourceId);
+      const text: string = isYT ? await parseYoutubeUrl(url!) : await parseUrl(url!);
+      const chunks: TextChunk[] = chunkText(text, sourceId);
 
       if (chunks.length === 0) {
         res.status(422).json({ error: 'No usable text could be extracted from the URL' });
@@ -116,11 +118,11 @@ router.post(
 
       notebookStore.addChunksToNotebook(req.notebookId!, chunks);
 
-      const texts = chunks.map((c) => c.text);
-      const embeddings = await embedTexts(texts, 'document');
+      const texts: string[] = chunks.map((c) => c.text);
+      const embeddings: number[][] = await embedTexts(texts, 'document');
       storeChunkEmbeddings(chunks, embeddings);
 
-      const source = notebookStore.addSource(req.notebookId!, {
+      const source: Source | null = notebookStore.addSource(req.notebookId!, {
         id: sourceId,
         name: displayName,
         mimetype: isYT ? 'video/youtube' : 'text/html',

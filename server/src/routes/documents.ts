@@ -3,12 +3,13 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import logger from '../logger.js';
 import * as notebookStore from '../stores/notebookStore.js';
+import type { TextChunk, Source, SourceGroup } from '../stores/notebookStore.js';
 import * as documentCacheStore from '../stores/documentCacheStore.js';
+import type { CacheEntry } from '../stores/documentCacheStore.js';
 import {
   generateStudyGuide,
   generateFaq,
   generateExecutiveBrief,
-  type SourceGroup,
   type StudyGuide,
   type Faq,
   type ExecutiveBrief,
@@ -47,28 +48,28 @@ router.post('/generate', async (req: Request<unknown, unknown, GenerateBody>, re
       return;
     }
 
-    const chunks = notebookStore.getChunksForNotebook(notebookId);
+    const chunks: TextChunk[] = notebookStore.getChunksForNotebook(notebookId);
     if (chunks.length === 0) {
       res.status(422).json({ error: 'No source material available in this notebook' });
       return;
     }
 
-    const sources = notebookStore.getSources(notebookId);
-    const cached = documentCacheStore.getCachedDocument(notebookId, type);
+    const sources: Source[] = notebookStore.getSources(notebookId);
+    const cached: CacheEntry | null = documentCacheStore.getCachedDocument(notebookId, type);
     if (cached && documentCacheStore.isFresh(notebookId, type, sources)) {
       logger.info({ notebookId, type }, 'serving cached document');
       res.json({ type, document: cached.document });
       return;
     }
 
-    const sourceGroups = notebookStore.buildSourceGroups(notebookId, chunks);
+    const sourceGroups: SourceGroup[] = notebookStore.buildSourceGroups(notebookId, chunks);
 
     logger.info(
       { notebookId, type, sourceCount: sourceGroups.length, chunkCount: chunks.length },
       'document generation started'
     );
 
-    const document = await generator(sourceGroups);
+    const document: StudyGuide | Faq | ExecutiveBrief = await generator(sourceGroups);
 
     documentCacheStore.setCachedDocument(notebookId, type, document, sources);
     logger.info({ notebookId, type }, 'document generation complete');

@@ -1,10 +1,10 @@
 'use strict';
 
-interface Source {
+export interface CacheSource {
   id: string;
 }
 
-interface CacheEntry {
+export interface CacheEntry {
   document: unknown;
   sourceHash: string;
   createdAt: number;
@@ -12,7 +12,7 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry | boolean>();
 
-function buildSourceHash(sources: Source[]): string {
+function buildSourceHash(sources: CacheSource[]): string {
   return sources
     .map((s) => s.id)
     .sort()
@@ -29,7 +29,7 @@ export function setCachedDocument(
   notebookId: string,
   type: string,
   document: unknown,
-  sources: Source[]
+  sources: CacheSource[]
 ): void {
   const key = `${notebookId}:${type}`;
   cache.set(key, {
@@ -39,7 +39,7 @@ export function setCachedDocument(
   });
 }
 
-export function isFresh(notebookId: string, type: string, currentSources: Source[]): boolean {
+export function isFresh(notebookId: string, type: string, currentSources: CacheSource[]): boolean {
   const entry = cache.get(`${notebookId}:${type}`);
   if (!entry || typeof entry === 'boolean') return false;
   return entry.sourceHash === buildSourceHash(currentSources);
