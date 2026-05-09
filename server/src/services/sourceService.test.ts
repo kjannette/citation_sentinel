@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { chunkText, parseFile, isYoutubeUrl, extractVideoId, parseUrl } from './sourceService.js';
+import {
+  chunkText,
+  parseFile,
+  isYoutubeUrl,
+  extractVideoId,
+  parseUrl,
+  type TextChunk,
+} from './sourceService.js';
 
 describe('chunkText', () => {
   it('returns a single chunk for short text', () => {
-    const chunks = chunkText('Hello world.', 'src-1');
+    const chunks: TextChunk[] = chunkText('Hello world.', 'src-1');
     expect(chunks).toHaveLength(1);
     expect(chunks[0].text).toBe('Hello world.');
     expect(chunks[0].sourceId).toBe('src-1');
@@ -42,7 +49,6 @@ describe('chunkText', () => {
     const chunks = chunkText(text, 'src-5');
     if (chunks.length >= 2) {
       const end0 = chunks[0].text.slice(-100);
-      const start1 = chunks[1].text.slice(0, 100);
       const hasOverlap = chunks[1].text.includes(end0.slice(-50));
       expect(hasOverlap).toBe(true);
     }

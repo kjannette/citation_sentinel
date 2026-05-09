@@ -9,31 +9,43 @@ code and move between projects.
 TypeScript, check
 out [Google's TypeScript style guide](https://google.github.io/styleguide/tsguide.html).
 
-### Prefer consistency
+### When in doubt, prefer consistency
 
-1. If these rules contradict the style of a particular file, prioritize maintaining consistency within a file. Mixing different style conventions in a single file creates more confusion than diverging from the recommendations in this guide.
+1. Whenever you encounter a situation in which these rules contradict the style of a particular file,
+prioritize maintaining consistency within a file. Mixing different style conventions in a single
+file creates more confusion than diverging from the recommendations in this guide.
 
 ## Naming
 
 ### Separate words in file names with hyphens
 
-1. Separate words within a file name with hyphens (`-`). For example, a component named `UserProfile` has a file name `user-profile.ts`.
+1. Separate words within a file name with hyphens (`-`). For example, a component named `UserProfile`
+has a file name `user-profile.ts`.
 
 ### Use the same name for a file's tests with `.spec` at the end
 
-1. For unit tests, end file names with `.spec.ts`. For example, the unit test file for the `UserProfile` component has the file name `user-profile.spec.ts`.
+1. For unit tests, end file names with `.spec.ts`. For example, the unit test file for
+the `UserProfile` component has the file name `user-profile.spec.ts`.
 
 ### Match file names to the TypeScript identifier within
 
-1. File names should generally describe the contents of the code in the file. When the file contains a TypeScript class, the file name should reflect that class name. For example, a file containing a component named `UserProfile` has the name `user-profile.ts`.
+1. File names should generally describe the contents of the code in the file. When the file contains a
+TypeScript class, the file name should reflect that class name. For example, a file containing a
+component named `UserProfile` has the name `user-profile.ts`.
 
-2. If the file contains more than one primary namable identifier, choose a name that describes the common theme to the code within. If the code in a file does not fit within a common theme or feature area, consider breaking the code up into different files. Do not use overly generic file names like `helpers.ts`, `utils.ts`, or `common.ts`.
+2. If the file contains more than one primary namable identifier, choose a name that describes the
+common theme to the code within. If the code in a file does not fit within a common theme or feature
+area, consider breaking the code up into different files. Do not use overly generic file names
+like `helpers.ts`, `utils.ts`, or `common.ts`.
 
 ### Use the same file name for a component's TypeScript, template, and styles
 
-1. Components typically consist of one TypeScript file, one template file, and one style file. These files should share the same name with different file extensions. For example, a `UserProfile` component can have the files `user-profile.ts`, `user-profile.html`, and `user-profile.css`.
+1. Components typically consist of one TypeScript file, one template file, and one style file. These
+files should share the same name with different file extensions. For example, a `UserProfile`
+component can have the files `user-profile.ts`, `user-profile.html`, and `user-profile.css`.
 
-2. If a component has more than one style file, append the name with additional words that describe the styles specific to that file. For example, `UserProfile` might have style
+2. If a component has more than one style file, append the name with additional words that describe the
+styles specific to that file. For example, `UserProfile` might have style
 files `user-profile-settings.css` and `user-profile-subscription.css`.
 
 ## Project structure
@@ -44,7 +56,8 @@ files `user-profile-settings.css` and `user-profile-subscription.css`.
 named `src`. Code that's not related to UI, such as configuration files or scripts, should live
 outside the `src` directory.
 
-2. This keeps the root application directory consistent between different Angular projects and creates a clear separation between UI code and other code in your project.
+2. This keeps the root application directory consistent between different Angular projects and creates
+a clear separation between UI code and other code in your project.
 
 ### Bootstrap your application in a file named `main.ts` directly inside `src`
 
@@ -53,14 +66,17 @@ named `main.ts`. This represents the primary entry point to the application.
 
 ### Group closely related files together in the same directory
 
-1. Angular components consist of a TypeScript file and, optionally, a template and one or more style files. You should group these together in the same directory.
+1. Angular components consist of a TypeScript file and, optionally, a template and one or more style
+files. You should group these together in the same directory.
 
 2. Unit tests should live in the same directory as the code-under-test. Do not collect unrelated
 tests into a single `tests` directory.
 
 ### Organize your project by feature areas
 
-1. Organize your project into subdirectories based on the features of your application or common themes to the code in those directories. For example, the project structure for a movie theater site, MovieReel, might look like this:
+1. Organize your project into subdirectories based on the features of your application or common themes
+to the code in those directories. For example, the project structure for a movie theater site,
+MovieReel, might look like this:
 
 ```
 src/
@@ -81,7 +97,10 @@ number of files in a directory grows, consider splitting further into additional
 
 ### One concept per file
 
-1. Prefer focusing source files on a single _concept_. For Angular classes specifically, this usually means one component, directive, or service per file. However, it's okay if a file contains more than one component or directive if your classes are relatively small and they tie together as part of a single concept.
+1. Prefer focusing source files on a single _concept_. For Angular classes specifically, this usually
+means one component, directive, or service per file. However, it's okay if a file contains more than
+one component or directive if your classes are relatively small and they tie together as part of a
+single concept.
 
 2. When in doubt, go with the approach that leads to smaller files.
 
@@ -102,7 +121,8 @@ number of files in a directory grows, consider splitting further into additional
 
 ### Choosing component selectors
 
-1. See the [Components guide for details on choosing component selectors](guide/components/selectors#choosing-a-selector).
+1. See
+the [Components guide for details on choosing component selectors](guide/components/selectors#choosing-a-selector).
 
 ### Naming component and directive members
 

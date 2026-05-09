@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildPrompt } from './generationService.js';
+import { buildPrompt, type SourceGroup } from './generationService.js';
 
 describe('buildPrompt', () => {
-  const sourceGroups = [
+  const sourceGroups: SourceGroup[] = [
     {
       docIndex: 1,
       name: 'Weather Facts',
@@ -11,10 +11,7 @@ describe('buildPrompt', () => {
     {
       docIndex: 2,
       name: 'Water Science',
-      chunks: [
-        { text: 'Water is wet.' },
-        { text: 'Water boils at 100°C.' },
-      ],
+      chunks: [{ text: 'Water is wet.' }, { text: 'Water boils at 100°C.' }],
     },
   ];
 

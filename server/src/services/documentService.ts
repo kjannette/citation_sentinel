@@ -5,7 +5,7 @@ import logger from '../logger.js';
 
 const MODEL = 'claude-sonnet-4-5-20250929';
 
-function getClient() {
+function getClient(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('ANTHROPIC_API_KEY is not set');
   return new Anthropic({ apiKey: key });
@@ -13,7 +13,17 @@ function getClient() {
 
 const MAX_SOURCE_CHARS = 30000;
 
-function buildSourceBlock(sourceGroups) {
+export interface SourceChunk {
+  text: string;
+}
+
+export interface SourceGroup {
+  docIndex: number;
+  name: string;
+  chunks: SourceChunk[];
+}
+
+function buildSourceBlock(sourceGroups: SourceGroup[]): string {
   const perSourceBudget = Math.floor(MAX_SOURCE_CHARS / (sourceGroups.length || 1));
 
   return sourceGroups
@@ -51,7 +61,11 @@ const STUDY_GUIDE_SCHEMA = {
               additionalProperties: false,
             },
           },
-          reviewQuestions: { type: 'array', items: { type: 'string' }, description: 'Self-test questions for this section' },
+          reviewQuestions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Self-test questions for this section',
+          },
         },
         required: ['heading', 'bullets', 'keyTerms', 'reviewQuestions'],
         additionalProperties: false,
@@ -65,9 +79,27 @@ const STUDY_GUIDE_SCHEMA = {
   },
   required: ['title', 'sections', 'mnemonics'],
   additionalProperties: false,
-};
+} as const;
 
-export async function generateStudyGuide(sourceGroups) {
+export interface KeyTerm {
+  term: string;
+  definition: string;
+}
+
+export interface StudyGuideSection {
+  heading: string;
+  bullets: string[];
+  keyTerms: KeyTerm[];
+  reviewQuestions: string[];
+}
+
+export interface StudyGuide {
+  title: string;
+  sections: StudyGuideSection[];
+  mnemonics: string[];
+}
+
+export async function generateStudyGuide(sourceGroups: SourceGroup[]): Promise<StudyGuide> {
   const client = getClient();
   const sources = buildSourceBlock(sourceGroups);
   const start = Date.now();
@@ -90,7 +122,9 @@ ${sources}`;
     output_config: { format: { type: 'json_schema', schema: STUDY_GUIDE_SCHEMA } },
   });
 
-  const parsed = JSON.parse(message.content[0]?.text || '{}');
+  const textBlock = message.content[0];
+  const raw = textBlock && 'text' in textBlock && textBlock.text ? textBlock.text : '{}';
+  const parsed = JSON.parse(raw) as StudyGuide;
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   logger.info({ sections: parsed.sections?.length, elapsedSec: elapsed }, 'study guide generated');
   return parsed;
@@ -116,9 +150,19 @@ const FAQ_SCHEMA = {
   },
   required: ['subject', 'faqPairs'],
   additionalProperties: false,
-};
+} as const;
 
-export async function generateFaq(sourceGroups) {
+export interface FaqPair {
+  question: string;
+  answer: string;
+}
+
+export interface Faq {
+  subject: string;
+  faqPairs: FaqPair[];
+}
+
+export async function generateFaq(sourceGroups: SourceGroup[]): Promise<Faq> {
   const client = getClient();
   const sources = buildSourceBlock(sourceGroups);
   const start = Date.now();
@@ -141,7 +185,9 @@ ${sources}`;
     output_config: { format: { type: 'json_schema', schema: FAQ_SCHEMA } },
   });
 
-  const parsed = JSON.parse(message.content[0]?.text || '{}');
+  const textBlock = message.content[0];
+  const raw = textBlock && 'text' in textBlock && textBlock.text ? textBlock.text : '{}';
+  const parsed = JSON.parse(raw) as Faq;
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
   logger.info({ subject: parsed.subject, pairs: parsed.faqPairs?.length, elapsedSec: elapsed }, 'FAQ generated');
   return parsed;
@@ -166,9 +212,19 @@ const EXEC_BRIEF_SCHEMA = {
   },
   required: ['title', 'sections'],
   additionalProperties: false,
-};
+} as const;
 
-export async function generateExecutiveBrief(sourceGroups) {
+export interface ExecutiveBriefSection {
+  subhead: string;
+  prose: string;
+}
+
+export interface ExecutiveBrief {
+  title: string;
+  sections: ExecutiveBriefSection[];
+}
+
+export async function generateExecutiveBrief(sourceGroups: SourceGroup[]): Promise<ExecutiveBrief> {
   const client = getClient();
   const sources = buildSourceBlock(sourceGroups);
   const start = Date.now();
@@ -192,8 +248,13 @@ ${sources}`;
     output_config: { format: { type: 'json_schema', schema: EXEC_BRIEF_SCHEMA } },
   });
 
-  const parsed = JSON.parse(message.content[0]?.text || '{}');
+  const textBlock = message.content[0];
+  const raw = textBlock && 'text' in textBlock && textBlock.text ? textBlock.text : '{}';
+  const parsed = JSON.parse(raw) as ExecutiveBrief;
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-  logger.info({ title: parsed.title, sections: parsed.sections?.length, elapsedSec: elapsed }, 'executive brief generated');
+  logger.info(
+    { title: parsed.title, sections: parsed.sections?.length, elapsedSec: elapsed },
+    'executive brief generated'
+  );
   return parsed;
 }

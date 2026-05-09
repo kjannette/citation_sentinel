@@ -4,42 +4,33 @@ import { embedTexts, cosineSimilarity } from './retrievalService.js';
 import * as vectorStore from '../stores/vectorStore.js';
 import logger from '../logger.js';
 
-// Calibration bounds for voyage-3 cosine similarity.
-// Empirically, near-direct-quote sentences top out around 0.68-0.72
-// raw cosine similarity; unrelated text falls below ~0.35.
 const SIM_FLOOR = 0.35;
 const SIM_CEILING = 0.65;
 const MIN_SENTENCE_LENGTH = 20;
 
-function splitIntoSentences(text) {
+function splitIntoSentences(text: string): string[] {
   const cleaned = text.replace(/\[\d+\]/g, '').trim();
   const raw = cleaned.split(/(?<=[.!?])\s+/);
-  return raw
-    .map((s) => s.trim())
-    .filter((s) => s.length >= MIN_SENTENCE_LENGTH);
+  return raw.map((s) => s.trim()).filter((s) => s.length >= MIN_SENTENCE_LENGTH);
 }
 
-function calibrate(rawSim) {
-  const scaled =
-    (rawSim - SIM_FLOOR) / (SIM_CEILING - SIM_FLOOR);
+function calibrate(rawSim: number): number {
+  const scaled = (rawSim - SIM_FLOOR) / (SIM_CEILING - SIM_FLOOR);
   return Math.max(0, Math.min(1, scaled));
 }
 
 export async function computeGroundedness(
-  answerText,
-  citedChunkIds
-) {
+  answerText: string,
+  citedChunkIds: string[] | null | undefined
+): Promise<number> {
   if (!citedChunkIds || citedChunkIds.length === 0) return 0;
 
   const sentences = splitIntoSentences(answerText);
   if (sentences.length === 0) return 0;
 
-  const sentenceEmbeddings = await embedTexts(
-    sentences,
-    'document'
-  );
+  const sentenceEmbeddings = await embedTexts(sentences, 'document');
 
-  const chunkVectors = [];
+  const chunkVectors: number[][] = [];
   for (const chunkId of citedChunkIds) {
     const vec = vectorStore.getVector(chunkId);
     if (vec) {
@@ -73,4 +64,3 @@ export async function computeGroundedness(
 
   return totalCalibrated / sentenceEmbeddings.length;
 }
-

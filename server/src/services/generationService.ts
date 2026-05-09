@@ -26,15 +26,50 @@ const RESPONSE_SCHEMA = {
   },
   required: ['answer', 'citedSourceIndices', 'followUpQuestions'],
   additionalProperties: false,
-};
+} as const;
 
-function getClient() {
+export interface SourceChunk {
+  text: string;
+}
+
+export interface SourceGroup {
+  docIndex: number;
+  name: string;
+  chunks: SourceChunk[];
+}
+
+export interface GenerationResult {
+  answer: string;
+  citedSourceIndices: number[];
+  followUpQuestions: string[];
+}
+
+export interface CitationDetailParams {
+  chunkTexts: string[];
+  sourceName: string;
+  answer: string;
+  citationIndex: number;
+}
+
+export interface RelevantLink {
+  title: string;
+  url: string;
+}
+
+export interface CitationDetail {
+  citedSentence: string;
+  topicSummary: string;
+  additionalInsight: string;
+  relevantLinks: RelevantLink[];
+}
+
+function getClient(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error('ANTHROPIC_API_KEY is not set');
   return new Anthropic({ apiKey: key });
 }
 
-export function buildPrompt(query, sourceGroups) {
+export function buildPrompt(query: string, sourceGroups: SourceGroup[]): string {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -64,15 +99,13 @@ ${sources}
 ${query}`;
 }
 
-export async function generate(query, sourceGroups) {
+export async function generate(query: string, sourceGroups: SourceGroup[]): Promise<GenerationResult> {
   const client = getClient();
 
   const message = await client.messages.create({
     model: MODEL,
     max_tokens: 2048,
-    messages: [
-      { role: 'user', content: buildPrompt(query, sourceGroups) },
-    ],
+    messages: [{ role: 'user', content: buildPrompt(query, sourceGroups) }],
     output_config: {
       format: {
         type: 'json_schema',
@@ -81,16 +114,19 @@ export async function generate(query, sourceGroups) {
     },
   });
 
-  const raw = message.content[0]?.text || '';
+  const textBlock = message.content[0];
+  const raw = textBlock && 'text' in textBlock ? textBlock.text : '';
   logger.debug({ rawLength: raw.length }, 'claude response received');
 
-  const parsed = JSON.parse(raw);
+  const parsed = JSON.parse(raw) as {
+    answer?: string;
+    citedSourceIndices?: number[];
+    followUpQuestions?: string[];
+  };
 
   const validIndices = new Set(sourceGroups.map((g) => g.docIndex));
   const citedSourceIndices = [
-    ...new Set(
-      (parsed.citedSourceIndices || []).filter((idx) => validIndices.has(idx)),
-    ),
+    ...new Set((parsed.citedSourceIndices || []).filter((idx) => validIndices.has(idx))),
   ];
 
   return {
@@ -113,7 +149,8 @@ const CITATION_DETAIL_SCHEMA = {
     },
     additionalInsight: {
       type: 'string',
-      description: 'Additional expert insight, analysis, or context on the subject beyond what the source states',
+      description:
+        'Additional expert insight, analysis, or context on the subject beyond what the source states',
     },
     relevantLinks: {
       type: 'array',
@@ -131,9 +168,14 @@ const CITATION_DETAIL_SCHEMA = {
   },
   required: ['citedSentence', 'topicSummary', 'additionalInsight', 'relevantLinks'],
   additionalProperties: false,
-};
+} as const;
 
-export async function generateCitationDetail({ chunkTexts, sourceName, answer, citationIndex }) {
+export async function generateCitationDetail({
+  chunkTexts,
+  sourceName,
+  answer,
+  citationIndex,
+}: CitationDetailParams): Promise<CitationDetail> {
   const client = getClient();
 
   const sourceText = chunkTexts.join('\n\n');
@@ -166,8 +208,9 @@ ${sourceText}`;
     },
   });
 
-  const raw = message.content[0]?.text || '';
+  const textBlock = message.content[0];
+  const raw = textBlock && 'text' in textBlock ? textBlock.text : '';
   logger.debug({ citationIndex, rawLength: raw.length }, 'citation detail response received');
 
-  return JSON.parse(raw);
+  return JSON.parse(raw) as CitationDetail;
 }

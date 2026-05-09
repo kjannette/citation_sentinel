@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
 const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }));
 
@@ -14,14 +14,18 @@ import {
   generateStudyGuide,
   generateFaq,
   generateExecutiveBrief,
+  type SourceGroup,
+  type StudyGuide,
+  type Faq,
+  type ExecutiveBrief,
 } from './documentService.js';
 
-const SOURCE_GROUPS = [
+const SOURCE_GROUPS: SourceGroup[] = [
   { docIndex: 1, name: 'Doc A', chunks: [{ text: 'Alpha content.' }] },
   { docIndex: 2, name: 'Doc B', chunks: [{ text: 'Beta first.' }, { text: 'Beta second.' }] },
 ];
 
-function apiResponse(obj) {
+function apiResponse<T>(obj: T): { content: Array<{ text: string }> } {
   return { content: [{ text: JSON.stringify(obj) }] };
 }
 
@@ -35,7 +39,7 @@ afterEach(() => {
 });
 
 describe('generateStudyGuide', () => {
-  const STUDY_GUIDE = {
+  const STUDY_GUIDE: StudyGuide = {
     title: 'Test Guide',
     sections: [{ heading: 'Intro', bullets: ['b1'], keyTerms: [], reviewQuestions: [] }],
     mnemonics: ['ABC'],
@@ -51,7 +55,7 @@ describe('generateStudyGuide', () => {
     mockCreate.mockResolvedValue(apiResponse(STUDY_GUIDE));
     await generateStudyGuide(SOURCE_GROUPS);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('[Source 1] (Doc A)');
     expect(prompt).toContain('Alpha content.');
     expect(prompt).toContain('[Source 2] (Doc B)');
@@ -63,13 +67,13 @@ describe('generateStudyGuide', () => {
     mockCreate.mockResolvedValue(apiResponse(STUDY_GUIDE));
     await generateStudyGuide(SOURCE_GROUPS);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('---');
   });
 });
 
 describe('generateFaq', () => {
-  const FAQ = {
+  const FAQ: Faq = {
     subject: 'Testing',
     faqPairs: [{ question: 'Q?', answer: 'A.' }],
   };
@@ -84,14 +88,14 @@ describe('generateFaq', () => {
     mockCreate.mockResolvedValue(apiResponse(FAQ));
     await generateFaq(SOURCE_GROUPS);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('[Source 1] (Doc A)');
     expect(prompt).toContain('[Source 2] (Doc B)');
   });
 });
 
 describe('generateExecutiveBrief', () => {
-  const BRIEF = {
+  const BRIEF: ExecutiveBrief = {
     title: 'Exec Brief',
     sections: [{ subhead: 'Overview', prose: 'Some prose.' }],
   };
@@ -106,7 +110,7 @@ describe('generateExecutiveBrief', () => {
     mockCreate.mockResolvedValue(apiResponse(BRIEF));
     await generateExecutiveBrief(SOURCE_GROUPS);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('[Source 1] (Doc A)');
     expect(prompt).toContain('[Source 2] (Doc B)');
   });
@@ -126,31 +130,25 @@ describe('shared behaviour', () => {
 
   it('truncates sources that exceed the per-source character budget', async () => {
     const longText = 'x'.repeat(35_000);
-    const bigGroups = [
-      { docIndex: 1, name: 'Big', chunks: [{ text: longText }] },
-    ];
-    mockCreate.mockResolvedValue(
-      apiResponse({ title: 't', sections: [], mnemonics: [] }),
-    );
+    const bigGroups: SourceGroup[] = [{ docIndex: 1, name: 'Big', chunks: [{ text: longText }] }];
+    mockCreate.mockResolvedValue(apiResponse({ title: 't', sections: [], mnemonics: [] }));
 
     await generateStudyGuide(bigGroups);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('[...truncated]');
     expect(prompt.length).toBeLessThan(longText.length);
   });
 
   it('combines multiple chunks within a source with double newlines', async () => {
-    const groups = [
+    const groups: SourceGroup[] = [
       { docIndex: 1, name: 'Multi', chunks: [{ text: 'AAA' }, { text: 'BBB' }] },
     ];
-    mockCreate.mockResolvedValue(
-      apiResponse({ title: 't', sections: [], mnemonics: [] }),
-    );
+    mockCreate.mockResolvedValue(apiResponse({ title: 't', sections: [], mnemonics: [] }));
 
     await generateStudyGuide(groups);
 
-    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    const prompt = (mockCreate as Mock).mock.calls[0][0].messages[0].content as string;
     expect(prompt).toContain('AAA\n\nBBB');
   });
 });

@@ -19,7 +19,7 @@ const execFileAsync = promisify(execFile);
 const CHARS_PER_CHUNK = 2000;
 const OVERLAP_CHARS = 200;
 
-const AUDIO_MIMETYPES = new Set([
+const AUDIO_MIMETYPES = new Set<string>([
   'audio/mpeg',
   'audio/mp3',
   'audio/wav',
@@ -31,11 +31,15 @@ const AUDIO_MIMETYPES = new Set([
   'audio/webm',
 ]);
 
-export function isAudioMimetype(mimetype) {
+export function isAudioMimetype(mimetype: string): boolean {
   return AUDIO_MIMETYPES.has(mimetype);
 }
 
-export async function parseFile(buffer, mimetype, filename) {
+export async function parseFile(
+  buffer: Buffer,
+  mimetype: string,
+  filename?: string
+): Promise<string> {
   if (mimetype === 'application/pdf') {
     const result = await pdfParse(buffer);
     return result.text;
@@ -58,7 +62,7 @@ export async function parseFile(buffer, mimetype, filename) {
 
 const WHISPER_MAX_BYTES = 25 * 1024 * 1024;
 
-async function transcribeAudio(buffer, filename) {
+async function transcribeAudio(buffer: Buffer, filename?: string): Promise<string> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error('OPENAI_API_KEY is required for audio transcription');
 
@@ -69,7 +73,7 @@ async function transcribeAudio(buffer, filename) {
   const client = new OpenAI({ apiKey: key });
 
   const ext = filename?.split('.').pop()?.toLowerCase() || 'mp3';
-  const file = new File([buffer], `audio.${ext}`, { type: `audio/${ext}` });
+  const file = new File([new Uint8Array(buffer)], `audio.${ext}`, { type: `audio/${ext}` });
 
   logger.info({ filename, bytes: buffer.length }, 'transcribing audio with Whisper');
 
@@ -81,7 +85,7 @@ async function transcribeAudio(buffer, filename) {
   return response.text;
 }
 
-const BLOCKED_IP_RANGES = [
+const BLOCKED_IP_RANGES: RegExp[] = [
   /^127\./,
   /^10\./,
   /^172\.(1[6-9]|2\d|3[01])\./,
@@ -94,12 +98,12 @@ const BLOCKED_IP_RANGES = [
   /^fd/i,
 ];
 
-function isBlockedIp(ip) {
+function isBlockedIp(ip: string): boolean {
   return BLOCKED_IP_RANGES.some((re) => re.test(ip));
 }
 
-async function validateUrl(raw) {
-  let parsed;
+async function validateUrl(raw: string): Promise<string> {
+  let parsed: URL;
   try {
     parsed = new URL(raw);
   } catch {
@@ -126,14 +130,14 @@ async function validateUrl(raw) {
   return parsed.href;
 }
 
-export async function parseUrl(url) {
+export async function parseUrl(url: string): Promise<string> {
   const safeUrl = await validateUrl(url);
   logger.info({ url: safeUrl }, 'fetching URL content');
 
   const res = await fetch(safeUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; NotebookClone/1.0)',
-      'Accept': 'text/html,application/xhtml+xml,text/plain',
+      Accept: 'text/html,application/xhtml+xml,text/plain',
     },
     signal: AbortSignal.timeout(15000),
   });
@@ -164,16 +168,24 @@ export async function parseUrl(url) {
 
 const YT_URL_RE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
 
-export function isYoutubeUrl(url) {
+export function isYoutubeUrl(url: string): boolean {
   return YT_URL_RE.test(url);
 }
 
-export function extractVideoId(url) {
+export function extractVideoId(url: string): string | null {
   const match = url.match(YT_URL_RE);
   return match ? match[1] : null;
 }
 
-export async function parseYoutubeUrl(url) {
+interface YouTubeSubtitleEvent {
+  segs?: Array<{ utf8?: string }>;
+}
+
+interface YouTubeSubtitleData {
+  events?: YouTubeSubtitleEvent[];
+}
+
+export async function parseYoutubeUrl(url: string): Promise<string> {
   const videoId = extractVideoId(url);
   if (!videoId) {
     throw new Error('Could not extract YouTube video ID from URL');
@@ -183,16 +195,23 @@ export async function parseYoutubeUrl(url) {
 
   const tmpDir = mkdtempSync(join(tmpdir(), 'yt-'));
   try {
-    const { stderr } = await execFileAsync('yt-dlp', [
-      '--skip-download',
-      '--write-auto-sub',
-      '--write-sub',
-      '--sub-lang', 'en',
-      '--sub-format', 'json3',
-      '--no-warnings',
-      '-o', join(tmpDir, '%(id)s'),
-      `https://www.youtube.com/watch?v=${videoId}`,
-    ], { timeout: 20000 });
+    const { stderr } = await execFileAsync(
+      'yt-dlp',
+      [
+        '--skip-download',
+        '--write-auto-sub',
+        '--write-sub',
+        '--sub-lang',
+        'en',
+        '--sub-format',
+        'json3',
+        '--no-warnings',
+        '-o',
+        join(tmpDir, '%(id)s'),
+        `https://www.youtube.com/watch?v=${videoId}`,
+      ],
+      { timeout: 20000 }
+    );
 
     if (stderr) {
       logger.warn({ videoId, stderr: stderr.slice(0, 500) }, 'yt-dlp stderr output');
@@ -204,10 +223,10 @@ export async function parseYoutubeUrl(url) {
       throw new Error('No English subtitles available for this YouTube video');
     }
 
-    const data = JSON.parse(readFileSync(join(tmpDir, subFile), 'utf-8'));
+    const data: YouTubeSubtitleData = JSON.parse(readFileSync(join(tmpDir, subFile), 'utf-8'));
     const events = (data.events || []).filter((e) => e.segs);
     const text = events
-      .map((e) => e.segs.map((s) => s.utf8 || '').join(''))
+      .map((e) => e.segs!.map((s) => s.utf8 || '').join(''))
       .join(' ')
       .replace(/\n/g, ' ')
       .replace(/\s+/g, ' ')
@@ -220,27 +239,35 @@ export async function parseYoutubeUrl(url) {
     logger.info({ videoId, textLength: text.length }, 'YouTube subtitles extracted');
     return text;
   } catch (err) {
-    if (err.code === 'ENOENT') {
+    const error = err as NodeJS.ErrnoException & { killed?: boolean; stderr?: string };
+    if (error.code === 'ENOENT') {
       throw new Error('YouTube support requires yt-dlp to be installed (brew install yt-dlp)');
     }
-    if (err.killed) {
+    if (error.killed) {
       throw new Error('yt-dlp timed out fetching subtitles');
     }
-    if (err.message.startsWith('No English') || err.message.startsWith('Subtitles')) {
-      throw err;
+    if (error.message?.startsWith('No English') || error.message?.startsWith('Subtitles')) {
+      throw error;
     }
-    const detail = err.stderr?.slice(0, 300) || err.message;
+    const detail = error.stderr?.slice(0, 300) || error.message;
     throw new Error(`Failed to extract YouTube subtitles: ${detail}`);
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
-export function chunkText(text, sourceId) {
+export interface TextChunk {
+  id: string;
+  text: string;
+  sourceId: string;
+  index: number;
+}
+
+export function chunkText(text: string, sourceId: string): TextChunk[] {
   const cleaned = text.replace(/\r\n/g, '\n').trim();
   if (!cleaned) return [];
 
-  const chunks = [];
+  const chunks: TextChunk[] = [];
   let start = 0;
   let index = 0;
 

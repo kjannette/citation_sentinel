@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": true, // Allow JavaScript files to be imported and compiled
+    "checkJs": true,
+    "target": "es2022",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src", // Root of input files
+    "strict": true,
+    "skipLibCheck": true // Skip checking .d.ts files for faster builds
+  },
+  "include": [
+    "src/**/*"
+  ], // Files to include in the project
+  "exclude": [
+    "node_modules"
+  ] // Folders to ignore
+}

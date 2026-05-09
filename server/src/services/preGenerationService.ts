@@ -7,22 +7,29 @@ import {
   generateStudyGuide,
   generateFaq,
   generateExecutiveBrief,
+  type SourceGroup,
+  type StudyGuide,
+  type Faq,
+  type ExecutiveBrief,
 } from './documentService.js';
 
 const MIN_SOURCES = 2;
 
-const GENERATORS = {
+type DocumentType = 'study-guide' | 'faq' | 'executive-brief';
+type GeneratorFn = (sourceGroups: SourceGroup[]) => Promise<StudyGuide | Faq | ExecutiveBrief>;
+
+const GENERATORS: Record<DocumentType, GeneratorFn> = {
   'study-guide': generateStudyGuide,
-  'faq': generateFaq,
+  faq: generateFaq,
   'executive-brief': generateExecutiveBrief,
 };
 
 const DEBOUNCE_MS = 5000;
 
-const pendingReGen = new Set();
-const debounceTimers = new Map();
+const pendingReGen = new Set<string>();
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-export function triggerPreGeneration(notebookId) {
+export function triggerPreGeneration(notebookId: string): void {
   const notebook = notebookStore.getNotebook(notebookId);
   if (!notebook) return;
 
@@ -36,40 +43,46 @@ export function triggerPreGeneration(notebookId) {
     return;
   }
 
-  clearTimeout(debounceTimers.get(notebookId));
+  const existingTimer = debounceTimers.get(notebookId);
+  if (existingTimer !== undefined) {
+    clearTimeout(existingTimer);
+  }
   debounceTimers.set(
     notebookId,
     setTimeout(() => {
       debounceTimers.delete(notebookId);
       runPreGeneration(notebookId);
-    }, DEBOUNCE_MS),
+    }, DEBOUNCE_MS)
   );
   logger.debug({ notebookId, debounceMs: DEBOUNCE_MS }, 'pre-generation debounced');
 }
 
-function runPreGeneration(notebookId) {
+function runPreGeneration(notebookId: string): void {
   try {
     const sources = notebookStore.getSources(notebookId);
     const chunks = notebookStore.getChunksForNotebook(notebookId);
-    const sourceGroups = notebookStore.buildSourceGroups(notebookId, chunks);
+    const sourceGroups = notebookStore.buildSourceGroups(notebookId, chunks) as SourceGroup[];
 
     documentCacheStore.invalidate(notebookId);
     documentCacheStore.markGenerating(notebookId);
 
     logger.info(
       { notebookId, sourceCount: sources.length, chunkCount: chunks.length },
-      'background pre-generation started',
+      'background pre-generation started'
     );
 
-    const jobs = Object.entries(GENERATORS).map(async ([type, generator]) => {
-      try {
-        const document = await generator(sourceGroups);
-        documentCacheStore.setCachedDocument(notebookId, type, document, sources);
-        logger.info({ notebookId, type }, 'background pre-generation complete for type');
-      } catch (err) {
-        logger.error({ notebookId, type, err: err.message }, 'background pre-generation failed for type');
+    const jobs = (Object.entries(GENERATORS) as Array<[DocumentType, GeneratorFn]>).map(
+      async ([type, generator]) => {
+        try {
+          const document = await generator(sourceGroups);
+          documentCacheStore.setCachedDocument(notebookId, type, document, sources);
+          logger.info({ notebookId, type }, 'background pre-generation complete for type');
+        } catch (err) {
+          const error = err as Error;
+          logger.error({ notebookId, type, err: error.message }, 'background pre-generation failed for type');
+        }
       }
-    });
+    );
 
     Promise.all(jobs)
       .then(() => {
@@ -85,7 +98,8 @@ function runPreGeneration(notebookId) {
         }
       });
   } catch (err) {
-    logger.error({ notebookId, err: err.message }, 'pre-generation setup failed');
+    const error = err as Error;
+    logger.error({ notebookId, err: error.message }, 'pre-generation setup failed');
     documentCacheStore.clearGenerating(notebookId);
   }
 }

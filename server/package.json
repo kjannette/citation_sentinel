@@ -2,7 +2,9 @@
   "name": "notebook-clone-server",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
@@ -26,8 +28,11 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/node": "^25.6.2",
+    "@types/pdf-parse": "^1.1.5",
     "eslint": "^9.22.0",
     "prettier": "^3.5.3",
+    "typescript": "^6.0.3",
     "vitest": "^3.0.0"
   }
 }
