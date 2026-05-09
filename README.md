@@ -8,7 +8,7 @@ Built with a React/Vite frontend and a Typescript/Node/Express backend, using An
 
 ## Query pipeline
 
-Source Ingestion -> Parsing -> Chunking -> Embedding (using Voayge AI voyage-3 model) -> Storage (vector store) -> { user query submission } -> evaluation of user query -> Retrieval -> Ranking -> Response Generation (Using Anthopic's claude-opus-4-6 model) -> Response Groundedness Scoring (using Voyage AI rerank-r model)
+Source Ingestion -> Parsing -> Chunking -> Embedding (using Voyage AI voyage-3 model) -> Storage (vector store) -> { user query submission } -> evaluation of user query -> Retrieval -> Ranking -> Response Generation (Using Anthopic's claude-opus-4-6 model) -> Response Groundedness Scoring (using Voyage AI rerank-r model)
 
 ## Prerequisites
 
