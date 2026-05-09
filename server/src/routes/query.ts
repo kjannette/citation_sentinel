@@ -3,9 +3,12 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import logger from '../logger.js';
 import { embedTexts, search, rerank } from '../services/retrievalService.js';
+import type { ScoredChunk, RankedChunk, TextChunk } from '../services/retrievalService.js';
 import { generate } from '../services/generationService.js';
+import type { GenerationResult } from '../services/generationService.js';
 import { computeGroundedness } from '../services/scoringService.js';
 import * as notebookStore from '../stores/notebookStore.js';
+import type { SourceGroup } from '../stores/notebookStore.js';
 
 const TOP_K_SEARCH = 20;
 const TOP_K_RERANK = 5;
@@ -15,6 +18,20 @@ const router = Router();
 interface QueryBody {
   notebookId?: string;
   question?: string;
+}
+
+interface Citation {
+  sourceIndex: number;
+  sourceId: string | null;
+  name: string | null;
+  chunkTexts: string[];
+}
+
+interface QueryResponse {
+  answer: string;
+  citations: Citation[];
+  groundednessScore: number | null;
+  followUpQuestions: string[];
 }
 
 router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response, next: NextFunction) => {
@@ -27,9 +44,9 @@ router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response
 
     logger.info({ notebookId, question }, 'query received');
 
-    const [queryEmbedding] = await embedTexts([question], 'query');
+    const [queryEmbedding]: number[][] = await embedTexts([question], 'query');
 
-    const searchResults = search(queryEmbedding, notebookId, TOP_K_SEARCH);
+    const searchResults: ScoredChunk[] = search(queryEmbedding, notebookId, TOP_K_SEARCH);
     if (searchResults.length === 0) {
       res.json({
         answer: 'No sources found for this notebook. Upload some documents first.',
@@ -40,9 +57,9 @@ router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response
       return;
     }
 
-    const candidateChunks = searchResults.map((r) => r.chunk);
-    const reranked = await rerank(question, candidateChunks);
-    const topChunks = reranked.slice(0, TOP_K_RERANK).map((r) => r.chunk);
+    const candidateChunks: TextChunk[] = searchResults.map((r) => r.chunk);
+    const reranked: RankedChunk[] = await rerank(question, candidateChunks);
+    const topChunks: TextChunk[] = reranked.slice(0, TOP_K_RERANK).map((r) => r.chunk);
 
     logger.debug(
       {
@@ -52,24 +69,24 @@ router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response
       'retrieval complete'
     );
 
-    const sourceGroups = notebookStore.buildSourceGroups(notebookId, topChunks);
+    const sourceGroups: SourceGroup[] = notebookStore.buildSourceGroups(notebookId, topChunks);
 
-    const { answer, citedSourceIndices, followUpQuestions } = await generate(question, sourceGroups);
+    const { answer, citedSourceIndices, followUpQuestions }: GenerationResult = await generate(question, sourceGroups);
 
     const citedChunkIds: string[] = [];
     for (const idx of citedSourceIndices) {
-      const group = sourceGroups.find((g) => g.docIndex === idx);
+      const group: SourceGroup | undefined = sourceGroups.find((g) => g.docIndex === idx);
       if (group) {
         citedChunkIds.push(...group.chunks.map((c) => c.id));
       }
     }
 
-    const groundednessScore = await computeGroundedness(answer, citedChunkIds);
+    const groundednessScore: number = await computeGroundedness(answer, citedChunkIds);
 
     logger.info({ groundednessScore: groundednessScore.toFixed(3) }, 'query complete');
 
-    const citations = citedSourceIndices.map((idx) => {
-      const group = sourceGroups.find((g) => g.docIndex === idx);
+    const citations: Citation[] = citedSourceIndices.map((idx) => {
+      const group: SourceGroup | undefined = sourceGroups.find((g) => g.docIndex === idx);
       return group
         ? {
             sourceIndex: idx,
@@ -77,15 +94,17 @@ router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response
             name: group.name,
             chunkTexts: group.chunks.map((c) => c.text),
           }
-        : { sourceIndex: idx, sourceId: null, name: null, chunkTexts: [] };
+        : { sourceIndex: idx, sourceId: null, name: null, chunkTexts: [] as string[] };
     });
 
-    res.json({
+    const response: QueryResponse = {
       answer,
       citations,
       groundednessScore,
       followUpQuestions,
-    });
+    };
+
+    res.json(response);
   } catch (err) {
     next(err);
   }
