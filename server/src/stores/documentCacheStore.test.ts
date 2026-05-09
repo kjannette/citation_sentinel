@@ -10,7 +10,6 @@ import {
 } from './documentCacheStore.js';
 
 describe('documentCacheStore', () => {
-
   describe('getCachedDocument / setCachedDocument', () => {
     it('returns null for an uncached entry', () => {
       expect(getCachedDocument('miss-1', 'faq')).toBeNull();
@@ -22,22 +21,22 @@ describe('documentCacheStore', () => {
       setCachedDocument('rt-1', 'study-guide', doc, sources);
 
       const entry = getCachedDocument('rt-1', 'study-guide');
-      expect(entry.document).toEqual(doc);
-      expect(entry.sourceHash).toBe('s1|s2');
-      expect(entry.createdAt).toBeTypeOf('number');
+      expect(entry!.document).toEqual(doc);
+      expect(entry!.sourceHash).toBe('s1|s2');
+      expect(entry!.createdAt).toBeTypeOf('number');
     });
 
     it('overwrites an existing entry for the same key', () => {
       setCachedDocument('ow-1', 'faq', { v: 1 }, [{ id: 'a' }]);
       setCachedDocument('ow-1', 'faq', { v: 2 }, [{ id: 'b' }]);
-      expect(getCachedDocument('ow-1', 'faq').document).toEqual({ v: 2 });
+      expect(getCachedDocument('ow-1', 'faq')!.document).toEqual({ v: 2 });
     });
 
     it('keeps entries for different types separate', () => {
       setCachedDocument('sep-1', 'faq', { kind: 'faq' }, [{ id: 'x' }]);
       setCachedDocument('sep-1', 'study-guide', { kind: 'sg' }, [{ id: 'x' }]);
-      expect(getCachedDocument('sep-1', 'faq').document.kind).toBe('faq');
-      expect(getCachedDocument('sep-1', 'study-guide').document.kind).toBe('sg');
+      expect((getCachedDocument('sep-1', 'faq')!.document as { kind: string }).kind).toBe('faq');
+      expect((getCachedDocument('sep-1', 'study-guide')!.document as { kind: string }).kind).toBe('sg');
     });
   });
 
@@ -71,7 +70,7 @@ describe('documentCacheStore', () => {
       setCachedDocument('inv-b', 'faq', { b: 2 }, [{ id: 'x' }]);
       invalidate('inv-a');
       expect(getCachedDocument('inv-a', 'faq')).toBeNull();
-      expect(getCachedDocument('inv-b', 'faq').document).toEqual({ b: 2 });
+      expect(getCachedDocument('inv-b', 'faq')!.document).toEqual({ b: 2 });
     });
   });
 

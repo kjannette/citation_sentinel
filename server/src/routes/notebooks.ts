@@ -1,20 +1,25 @@
 'use strict';
 
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import * as notebookStore from '../stores/notebookStore.js';
 import { deleteVectorsForChunks } from '../stores/vectorStore.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
+router.get('/', (_req: Request, res: Response) => {
   res.json(notebookStore.getAllNotebooks());
 });
 
-router.post('/', (req, res) => {
+interface CreateNotebookBody {
+  name?: string;
+}
+
+router.post('/', (req: Request<unknown, unknown, CreateNotebookBody>, res: Response) => {
   const { name } = req.body;
   if (!name || !name.trim()) {
-    return res.status(400).json({ error: 'name is required' });
+    res.status(400).json({ error: 'name is required' });
+    return;
   }
 
   const notebook = notebookStore.createNotebook({
@@ -26,11 +31,16 @@ router.post('/', (req, res) => {
   res.status(201).json(notebook);
 });
 
-router.delete('/:id', (req, res) => {
+interface DeleteParams {
+  id: string;
+}
+
+router.delete('/:id', (req: Request<DeleteParams>, res: Response) => {
   const chunks = notebookStore.getChunksForNotebook(req.params.id);
   const deleted = notebookStore.deleteNotebook(req.params.id);
   if (!deleted) {
-    return res.status(404).json({ error: 'notebook not found' });
+    res.status(404).json({ error: 'notebook not found' });
+    return;
   }
   if (chunks.length) {
     deleteVectorsForChunks(chunks.map((c) => c.id));
@@ -39,4 +49,3 @@ router.delete('/:id', (req, res) => {
 });
 
 export default router;
-

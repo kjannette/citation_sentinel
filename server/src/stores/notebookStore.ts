@@ -1,62 +1,100 @@
 'use strict';
 
+export interface TextChunk {
+  id: string;
+  text: string;
+  sourceId: string;
+  index: number;
+}
+
+export interface Source {
+  id: string;
+  name: string;
+  mimetype?: string;
+  chunkCount?: number;
+  uploadedAt?: string;
+}
+
+export interface Notebook {
+  id: string;
+  name: string;
+  createdAt: string;
+  sources: Source[];
+  chunks: TextChunk[];
+}
+
+export interface NotebookMeta {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface SourceGroup {
+  docIndex: number;
+  sourceId: string;
+  name: string;
+  chunks: TextChunk[];
+}
+
 export class NotebookStore {
-  constructor() {
-    this.notebooks = new Map();
+  private notebooks = new Map<string, Notebook>();
+
+  getAllNotebooks(): NotebookMeta[] {
+    return Array.from(this.notebooks.values()).map(({ id, name, createdAt }) => ({
+      id,
+      name,
+      createdAt,
+    }));
   }
 
-  getAllNotebooks() {
-    return Array.from(this.notebooks.values()).map(({ chunks, ...meta }) => meta);
-  }
-
-  getNotebook(id) {
+  getNotebook(id: string): Notebook | null {
     return this.notebooks.get(id) || null;
   }
 
-  createNotebook(notebook) {
-    const record = { ...notebook, sources: [], chunks: [] };
+  createNotebook(notebook: { id: string; name: string; createdAt: string }): NotebookMeta {
+    const record: Notebook = { ...notebook, sources: [], chunks: [] };
     this.notebooks.set(record.id, record);
     return { id: record.id, name: record.name, createdAt: record.createdAt };
   }
 
-  deleteNotebook(id) {
+  deleteNotebook(id: string): boolean {
     return this.notebooks.delete(id);
   }
 
-  addSource(notebookId, source) {
+  addSource(notebookId: string, source: Source): Source | null {
     const notebook = this.notebooks.get(notebookId);
     if (!notebook) return null;
     notebook.sources.push(source);
     return source;
   }
 
-  getSources(notebookId) {
+  getSources(notebookId: string): Source[] {
     const notebook = this.notebooks.get(notebookId);
     if (!notebook) return [];
     return notebook.sources;
   }
 
-  addChunksToNotebook(notebookId, chunks) {
+  addChunksToNotebook(notebookId: string, chunks: TextChunk[]): Notebook | null {
     const notebook = this.notebooks.get(notebookId);
     if (!notebook) return null;
     notebook.chunks = notebook.chunks.concat(chunks);
     return notebook;
   }
 
-  getChunksForNotebook(notebookId) {
+  getChunksForNotebook(notebookId: string): TextChunk[] {
     const notebook = this.notebooks.get(notebookId);
     if (!notebook) return [];
     return notebook.chunks;
   }
 
-  buildSourceGroups(notebookId, chunks) {
+  buildSourceGroups(notebookId: string, chunks: TextChunk[]): SourceGroup[] {
     const sources = this.getSources(notebookId);
-    const sourceIndexMap = new Map();
+    const sourceIndexMap = new Map<string, number>();
     sources.forEach((src, i) => {
       sourceIndexMap.set(src.id, i + 1);
     });
 
-    const groupMap = new Map();
+    const groupMap = new Map<string, SourceGroup>();
     for (const chunk of chunks) {
       const docIndex = sourceIndexMap.get(chunk.sourceId) || 0;
       if (!groupMap.has(chunk.sourceId)) {
@@ -68,7 +106,7 @@ export class NotebookStore {
           chunks: [],
         });
       }
-      groupMap.get(chunk.sourceId).chunks.push(chunk);
+      groupMap.get(chunk.sourceId)!.chunks.push(chunk);
     }
 
     return Array.from(groupMap.values()).sort((a, b) => a.docIndex - b.docIndex);

@@ -20,7 +20,7 @@ type GeneratorFn = (sourceGroups: SourceGroup[]) => Promise<StudyGuide | Faq | E
 
 const GENERATORS: Record<DocumentType, GeneratorFn> = {
   'study-guide': generateStudyGuide,
-  faq: generateFaq,
+  'faq': generateFaq,
   'executive-brief': generateExecutiveBrief,
 };
 

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { NotebookStore } from './notebookStore.js';
 
 describe('notebookStore', () => {
-  let store;
+  let store: NotebookStore;
 
   beforeEach(() => {
     store = new NotebookStore();
@@ -15,7 +15,7 @@ describe('notebookStore', () => {
 
     const found = store.getNotebook('nb-1');
     expect(found).not.toBeNull();
-    expect(found.name).toBe('Test');
+    expect(found!.name).toBe('Test');
   });
 
   it('lists all notebooks without chunks', () => {
@@ -51,8 +51,8 @@ describe('notebookStore', () => {
   it('adds and retrieves chunks', () => {
     store.createNotebook({ id: 'nb-1', name: 'A', createdAt: '2026-01-01' });
     store.addChunksToNotebook('nb-1', [
-      { id: 'c-1', text: 'chunk one' },
-      { id: 'c-2', text: 'chunk two' },
+      { id: 'c-1', text: 'chunk one', sourceId: 's-1', index: 0 },
+      { id: 'c-2', text: 'chunk two', sourceId: 's-1', index: 1 },
     ]);
     const chunks = store.getChunksForNotebook('nb-1');
     expect(chunks).toHaveLength(2);

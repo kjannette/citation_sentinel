@@ -1,7 +1,7 @@
 'use strict';
 
 import 'dotenv/config';
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import logger from './logger.js';
 import notebookRoutes from './routes/notebooks.js';
@@ -21,11 +21,10 @@ for (const key of REQUIRED_KEYS) {
 
 const app = express();
 
-// CORS: wide-open for local dev. In production, lock this to specific origins.
 app.use(cors());
 app.use(express.json());
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   res.on('finish', () => {
     logger.info({
@@ -38,7 +37,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/.well-known/healthcheck', (req, res) => {
+app.get('/.well-known/healthcheck', (_req: Request, res: Response) => {
   res.json({
     service: 'notebook-clone',
     status: 'ok',
@@ -52,7 +51,11 @@ app.use('/api/query', queryRoutes);
 app.use('/api/citation-detail', citationDetailRoutes);
 app.use('/api/documents', documentRoutes);
 
-app.use((err, req, res, _next) => {
+interface ErrorWithStatus extends Error {
+  status?: number;
+}
+
+app.use((err: ErrorWithStatus, req: Request, res: Response, _next: NextFunction) => {
   logger.error({ err, method: req.method, url: req.originalUrl });
   res.status(err.status || 500).json({
     error: err.message || 'internal server error',

@@ -1,6 +1,6 @@
 'use strict';
 
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import logger from '../logger.js';
 import { embedTexts, search, rerank } from '../services/retrievalService.js';
 import { generate } from '../services/generationService.js';
@@ -12,11 +12,17 @@ const TOP_K_RERANK = 5;
 
 const router = Router();
 
-router.post('/', async (req, res, next) => {
+interface QueryBody {
+  notebookId?: string;
+  question?: string;
+}
+
+router.post('/', async (req: Request<unknown, unknown, QueryBody>, res: Response, next: NextFunction) => {
   try {
     const { notebookId, question } = req.body;
     if (!notebookId || !question) {
-      return res.status(400).json({ error: 'notebookId and question are required' });
+      res.status(400).json({ error: 'notebookId and question are required' });
+      return;
     }
 
     logger.info({ notebookId, question }, 'query received');
@@ -25,31 +31,32 @@ router.post('/', async (req, res, next) => {
 
     const searchResults = search(queryEmbedding, notebookId, TOP_K_SEARCH);
     if (searchResults.length === 0) {
-      return res.json({
+      res.json({
         answer: 'No sources found for this notebook. Upload some documents first.',
         citations: [],
         groundednessScore: null,
         followUpQuestions: [],
       });
+      return;
     }
 
     const candidateChunks = searchResults.map((r) => r.chunk);
     const reranked = await rerank(question, candidateChunks);
     const topChunks = reranked.slice(0, TOP_K_RERANK).map((r) => r.chunk);
 
-    logger.debug({
-      searchHits: searchResults.length,
-      rerankedTop: topChunks.length,
-    }, 'retrieval complete');
+    logger.debug(
+      {
+        searchHits: searchResults.length,
+        rerankedTop: topChunks.length,
+      },
+      'retrieval complete'
+    );
 
     const sourceGroups = notebookStore.buildSourceGroups(notebookId, topChunks);
 
-    const { answer, citedSourceIndices, followUpQuestions } = await generate(
-      question,
-      sourceGroups,
-    );
+    const { answer, citedSourceIndices, followUpQuestions } = await generate(question, sourceGroups);
 
-    const citedChunkIds = [];
+    const citedChunkIds: string[] = [];
     for (const idx of citedSourceIndices) {
       const group = sourceGroups.find((g) => g.docIndex === idx);
       if (group) {
@@ -65,11 +72,11 @@ router.post('/', async (req, res, next) => {
       const group = sourceGroups.find((g) => g.docIndex === idx);
       return group
         ? {
-          sourceIndex: idx,
-          sourceId: group.sourceId,
-          name: group.name,
-          chunkTexts: group.chunks.map((c) => c.text),
-        }
+            sourceIndex: idx,
+            sourceId: group.sourceId,
+            name: group.name,
+            chunkTexts: group.chunks.map((c) => c.text),
+          }
         : { sourceIndex: idx, sourceId: null, name: null, chunkTexts: [] };
     });
 
@@ -85,4 +92,3 @@ router.post('/', async (req, res, next) => {
 });
 
 export default router;
-

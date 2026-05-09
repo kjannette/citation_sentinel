@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "allowJs": true, // Allow JavaScript files to be imported and compiled
+    "allowJs": true,
     "checkJs": true,
     "target": "es2022",
-    "module": "commonjs",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist",
-    "rootDir": "./src", // Root of input files
+    "rootDir": "./src",
     "strict": true,
-    "skipLibCheck": true // Skip checking .d.ts files for faster builds
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*"

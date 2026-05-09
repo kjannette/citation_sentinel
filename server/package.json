@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "tsx src/index.ts",
     "test": "vitest run",
     "lint": "eslint src/",
     "fmt": "prettier --write .",
@@ -28,10 +28,15 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.6.2",
     "@types/pdf-parse": "^1.1.5",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9.22.0",
     "prettier": "^3.5.3",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^3.0.0"
   }

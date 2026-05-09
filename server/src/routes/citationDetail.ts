@@ -1,19 +1,27 @@
 'use strict';
 
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import logger from '../logger.js';
 import { generateCitationDetail } from '../services/generationService.js';
 
 const router = Router();
 
-router.post('/', async (req, res, next) => {
+interface CitationDetailBody {
+  chunkTexts?: string[];
+  sourceName?: string;
+  answer?: string;
+  citationIndex?: number;
+}
+
+router.post('/', async (req: Request<unknown, unknown, CitationDetailBody>, res: Response, next: NextFunction) => {
   try {
     const { chunkTexts, sourceName, answer, citationIndex } = req.body;
 
     if (!chunkTexts?.length || !answer || citationIndex == null) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'chunkTexts, answer, and citationIndex are required',
       });
+      return;
     }
 
     logger.info({ citationIndex, sourceName }, 'citation detail requested');
