@@ -1,6 +1,6 @@
 # Citation Sentinel
 
-A source-grounded research assistant that employs cosine similarity scoring for LLM generated query responses to provide a "groundedness" score. This is a metric in Retrieval-Augmented Generation (RAG) systems that quantifies how well an AI-generated answer is supported by retrieved context. It measures "faithfulness" to source documents, ensuring the answer is not hallucinated or pulled from the model's pre-training data. 
+A source-grounded research assistant that employs cosine similarity scoring for LLM-generated query responses to provide a "groundedness" score. This is a metric in Retrieval-Augmented Generation (RAG) systems that quantifies how well an AI-generated answer is supported by retrieved context. It measures "faithfulness" to source documents, ensuring the answer is not hallucinated or pulled from the model's pre-training data. 
 
 Users upload source documents, or provide links to online sources including audio/video (i.e. links to youtube videos). Users may then ask questions and receive answers (with inline citations) verifiably grounded in the provided information sources. 
 
