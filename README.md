@@ -19,7 +19,7 @@ Source Ingestion -> Parsing -> Chunking -> Embedding (using Voyage AI voyage-3 m
 
 ```bash
 # clone and install
-git clone <repo-url> && cd notebooklm_clone
+git clone <repo-url> && cd citation_sentinel
 cd server && npm install && cd ..
 cd client && npm install && cd ..
 
@@ -58,7 +58,7 @@ Two-package monorepo:
 
 - `server/` -- single Express backend with layered architecture (routes -> services -> stores). Routes orchestrate; services contain business logic; stores manage in-memory state.
 
-- `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for notebooks/data sources, main area for LLM chat with explorable citations, groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
+- `client/` -- React 19 SPA via Vite. Two-panel layout: sidebar for data sources, main area for LLM chat with explorable citations, groundedness badges (cosine similarity scoring of LLM responses), and follow-up question chips.
 
 ## License
 
