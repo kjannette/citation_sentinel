@@ -13,7 +13,7 @@ Source Ingestion -> Parsing -> Chunking -> Embedding (using Voyage AI voyage-3 m
 ## Prerequisites
 
 - **Node.js** (v18+)
-- **yt-dlp** -- required for YouTube video source support (`brew install yt-dlp` or `pip install yt-dlp`)
+- **yt-dlp** -- required for YouTube video source support (`brew install yt-dlp`)
 
 ## Getting Started
 
