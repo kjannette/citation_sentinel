@@ -19,3 +19,4 @@ export function deleteVectorsForChunks(chunkIds: string[]): void {
     vectors.delete(id);
   }
 }
+// test
